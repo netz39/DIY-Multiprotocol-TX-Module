@@ -76,11 +76,17 @@ static void AFHDS2A_calc_channels()
 // telemetry sensors ID
 enum{
 	AFHDS2A_SENSOR_RX_VOLTAGE   = 0x00,
+	AFHDS2A_SENSOR_EXTERNAL_VOLTAGE = 0x03,
 	AFHDS2A_SENSOR_RX_ERR_RATE  = 0xfe,
 	AFHDS2A_SENSOR_RX_RSSI      = 0xfc,
 	AFHDS2A_SENSOR_RX_NOISE     = 0xfb,
 	AFHDS2A_SENSOR_RX_SNR       = 0xfa,
 };
+
+static uint8_t compress_voltage(uint8_t index){
+  uint32_t v = (uint32_t)packet[index+3]<<8 + (uint32_t)packet[index+2];
+  return (uint8_t)(v >> 8);
+}
 
 static void AFHDS2A_update_telemetry()
 {
@@ -106,9 +112,11 @@ static void AFHDS2A_update_telemetry()
 		switch(packet[index])
 		{
 			case AFHDS2A_SENSOR_RX_VOLTAGE:
-				//v_lipo1 = packet[index+3]<<8 | packet[index+2];
-				v_lipo1 = packet[index+2];
+				v_lipo1 = (packet[index+3]<<5) + (packet[index+2]>>3);
 				telemetry_link=1;
+				break;
+			case AFHDS2A_SENSOR_EXTERNAL_VOLTAGE:
+				v_lipo2 = (packet[index+3]<<5) + (packet[index+2]>>3);
 				break;
 			case AFHDS2A_SENSOR_RX_ERR_RATE:
 				RX_LQI=packet[index+2];
